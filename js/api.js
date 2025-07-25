@@ -1,49 +1,42 @@
-const API_BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "http://localhost:8080/api";
 
-// Crear un nuevo viaje
-async function crearViaje(viajeData, conductorId) {
-  const response = await fetch(`${API_BASE_URL}/viajes?conductorId=${conductorId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(viajeData)
-  });
-  
-  if (!response.ok) {
-    throw new Error("Error al crear viaje");
-  }
-  return await response.json();
-}
-
-// Obtener viajes pendientes por DNI
+/**
+ * Obtener viajes pendientes por DNI
+ * @param {string} dni
+ * @returns {Promise<Array>}
+ */
 async function obtenerViajesPendientes(dni) {
-  const response = await fetch(`${API_BASE_URL}/viajes/pendientes?dni=${dni}`);
+  const response = await fetch(`${BASE_URL}/viajes/pendientes?dni=${dni}`);
   if (!response.ok) {
-    throw new Error("Error al obtener viajes pendientes");
+    throw new Error("No se pudieron cargar los viajes pendientes.");
   }
   return await response.json();
 }
 
-// Obtener viajes finalizados por DNI 
+/**
+ * Obtener viajes finalizados por DNI
+ * @param {string} dni
+ * @returns {Promise<Array>}
+ */
 async function obtenerViajesFinalizados(dni) {
-  const response = await fetch(`${API_BASE_URL}/viajes/finalizados?dni=${dni}`);
+  const response = await fetch(`${BASE_URL}/viajes/finalizados?dni=${dni}`);
   if (!response.ok) {
-    throw new Error("Error al obtener viajes finalizados");
+    throw new Error("No se pudieron cargar los viajes finalizados.");
   }
   return await response.json();
 }
 
-// Cancelar un viaje
-async function cancelarViajeBackend(id) {
-  const response = await fetch(`${API_BASE_URL}/viajes/${id}`, {
-    method: "DELETE"
+/**
+ * Cancelar un viaje por ID
+ * @param {number} idViaje
+ * @returns {Promise<void>}
+ */
+async function cancelarViajeBackend(idViaje) {
+  const response = await fetch(`${BASE_URL}/viajes/${idViaje}/cancelar`, {
+    method: 'PUT'
   });
+
   if (!response.ok) {
-    throw new Error("Error al cancelar viaje");
+    throw new Error("No se pudo cancelar el viaje.");
   }
 }
-
-// Exportar funciones para usar en otros archivos
-window.crearViaje = crearViaje;
-window.obtenerViajesPendientes = obtenerViajesPendientes;
-window.obtenerViajesFinalizados = obtenerViajesFinalizados;
-window.cancelarViajeBackend = cancelarViajeBackend;

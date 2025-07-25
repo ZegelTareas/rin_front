@@ -130,46 +130,37 @@
 <script src="js/api.js"></script>
 <script>
  document.getElementById("formSolicitud").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    const viajeData = {
-        dni: document.getElementById("dni").value,
-        nombre: document.getElementById("nombre").value,
-        telefono: document.getElementById("telefono").value,
-        direccionActual: document.getElementById("direccion").value,
-        formaPago: document.getElementById("formaPago").value
-    };
+  e.preventDefault();
 
-    try {
-        const conductorId = 1; // ID fijo o puedes hacerlo dinámico
-        const response = await fetch(`http://localhost:8080/api/viajes?conductorId=${conductorId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(viajeData)
-        });
+  const viajeData = {
+    dni: document.getElementById("dni").value,
+    nombre: document.getElementById("nombre").value,
+    telefono: document.getElementById("telefono").value,
+    direccionActual: document.getElementById("direccion").value,
+    formaPago: document.getElementById("formaPago").value
+  };
 
-        if (!response.ok) {
-            throw new Error(await response.text());
-        }
+  try {
+    const conductorId = 1;
+    const response = await fetch(`http://localhost:8080/api/viajes?conductorId=${conductorId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(viajeData)
+    });
 
-        // Guardar el DNI en localStorage para usarlo después
-        localStorage.setItem('dniUsuario', viajeData.dni);
-        
-        // Mostrar mensaje y redirigir
-        alert("✅ Viaje solicitado correctamente\nPuedes ver el estado en 'Mis Viajes'");
-        window.location.href = "index.html";
-
-    } catch (error) {
-        alert("❌ Error al solicitar el viaje: " + error.message);
+    if (!response.ok) {
+      throw new Error(await response.text());
     }
+
+    localStorage.setItem('dniUsuario', viajeData.dni);
+    alert("✅ Viaje solicitado correctamente\nPuedes ver el estado en 'Mis Viajes'");
+    window.location.href = "viajes.html";
+
+  } catch (error) {
+    alert("❌ Error al solicitar el viaje: " + error.message);
+  }
 });
 
-// Cargar DNI si existe en la URL (opcional)
-const urlParams = new URLSearchParams(window.location.search);
-const dniParam = urlParams.get('dni');
-if (dniParam) {
-    document.getElementById("dni").value = dniParam;
-}
 </script>
 </body>
 </html>

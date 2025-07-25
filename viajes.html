@@ -57,6 +57,21 @@
   </div>
 </header>
 
+<section class="container my-4" id="formulario-dni">
+  <div class="card p-4">
+    <h5>Consulta tus viajes</h5>
+    <form id="dniForm" class="row g-3">
+      <div class="col-md-6">
+        <label for="dniInput" class="form-label">Ingresa tu DNI</label>
+        <input type="text" class="form-control" id="dniInput" required>
+      </div>
+      <div class="col-md-6 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Ver mis viajes</button>
+      </div>
+    </form>
+  </div>
+</section>
+
 
   <section class="viajes container my-5">
     <h3 class="mb-4">Viajes en transcurso</h3>
@@ -71,82 +86,100 @@
   <!-- Footer igual que en tu versión -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/api.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const dni = urlParams.get('dni') || localStorage.getItem('dniUsuario');
-      
-      if (!dni) {
-        alert("DNI no especificado");
-        window.location.href = "solicitar.html";
+<!-- 1. Script que maneja el formulario y carga los viajes -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const dniInput = document.getElementById('dniInput');
+    const dniForm = document.getElementById('dniForm');
+
+    const storedDni = localStorage.getItem('dniUsuario');
+    if (storedDni) {
+      dniInput.value = storedDni;
+      cargarViajes(storedDni);
+    }
+
+    dniForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const dni = dniInput.value.trim();
+
+      if (!/^\d{8}$/.test(dni)) {
+        alert("El DNI debe tener exactamente 8 dígitos numéricos.");
         return;
       }
 
-      // Guardar DNI para futuras consultas
       localStorage.setItem('dniUsuario', dni);
-
-      try {
-        // Cargar viajes pendientes
-        const pendientes = await obtenerViajesPendientes(dni);
-        renderViajes(pendientes, 'pendientes-container', true);
-        
-        // Cargar viajes finalizados
-        const finalizados = await obtenerViajesFinalizados(dni);
-        renderViajes(finalizados, 'finalizados-container', false);
-      } catch (error) {
-        alert("Error al cargar viajes: " + error.message);
-      }
+      cargarViajes(dni);
     });
+  });
 
-    function renderViajes(viajes, containerId, esPendiente) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      
-      if (viajes.length === 0) {
-        container.innerHTML = `<p class="text-muted">No hay viajes ${esPendiente ? 'pendientes' : 'finalizados'}</p>`;
-        return;
-      }
+  async function cargarViajes(dni) {
+    try {
+      const pendientes = await obtenerViajesPendientes(dni);
+      console.log("🚕 Pendientes:", pendientes);
+      renderViajes(pendientes, 'pendientes-container', true);
 
-      viajes.forEach(viaje => {
-        const viajeElement = document.createElement('div');
-        viajeElement.className = 'viaje-en-transcurso d-flex flex-wrap align-items-center gap-3 p-3 border rounded mb-3';
-        
-        viajeElement.innerHTML = `
-          <div class="flex-fill"><strong>Viaje #${viaje.id}</strong></div>
-          <div class="flex-fill">
-            <p class="mb-1"><strong>Destino:</strong> ${viaje.direccionActual}</p>
-            <p class="mb-1"><strong>Conductor:</strong> ${viaje.conductor.nombre}</p>
-            <p class="mb-1"><strong>Teléfono:</strong> ${viaje.conductor.numero}</p>
+      const finalizados = await obtenerViajesFinalizados(dni);
+      console.log("✅ Finalizados:", finalizados);
+      renderViajes(finalizados, 'finalizados-container', false);
+    } catch (error) {
+      alert("❌ Error al cargar los viajes: " + error.message);
+    }
+  }
+</script>
+
+<!-- 2. Script que muestra los viajes en el HTML y permite cancelar -->
+<script>
+  function renderViajes(viajes, containerId, esPendiente) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    if (!viajes || viajes.length === 0) {
+      container.innerHTML = `<p class="text-muted">No hay viajes ${esPendiente ? 'pendientes' : 'finalizados'}.</p>`;
+      return;
+    }
+
+    viajes.forEach(viaje => {
+      const viajeElement = document.createElement('div');
+      viajeElement.className = 'viaje-en-transcurso d-flex flex-wrap align-items-center gap-3 p-3 border rounded mb-3';
+
+      viajeElement.innerHTML = `
+        <div class="flex-fill"><strong>Viaje #${viaje.id}</strong></div>
+        <div class="flex-fill">
+          <p class="mb-1"><strong>Destino:</strong> ${viaje.direccionActual}</p>
+          <p class="mb-1"><strong>Conductor:</strong> ${viaje.conductor.nombre}</p>
+          <p class="mb-1"><strong>Teléfono:</strong> ${viaje.conductor.numero}</p>
+        </div>
+        ${esPendiente ? `
+          <div class="d-flex gap-2">
+            <a href="info.html?conductorId=${viaje.conductor.id}">
+              <button class="btn btn-info btn-sm">Info</button>
+            </a>
+            <button class="btn btn-danger btn-sm" onclick="cancelarViaje(${viaje.id})">Cancelar</button>
           </div>
-          ${esPendiente ? `
-            <div class="d-flex gap-2">
-              <a href="info.html?conductorId=${viaje.conductor.id}">
-                <button class="btn btn-info btn-sm">Info</button>
-              </a>
-              <button class="btn btn-danger btn-sm" onclick="cancelarViaje(${viaje.id})">Cancelar</button>
-            </div>
-          ` : `
-            <div class="text-end">
-              <span class="text-success">${viaje.estado}</span>
-            </div>
-          `}
-        `;
-        
-        container.appendChild(viajeElement);
-      });
-    }
+        ` : `
+          <div class="text-end">
+            <span class="text-success">${viaje.estado}</span>
+          </div>
+        `}
+      `;
 
-    async function cancelarViaje(id) {
-      if (confirm("¿Estás seguro de cancelar este viaje?")) {
-        try {
-          await cancelarViajeBackend(id);
-          alert("Viaje cancelado correctamente");
-          location.reload();
-        } catch (error) {
-          alert("Error al cancelar el viaje: " + error.message);
-        }
+      container.appendChild(viajeElement);
+    });
+  }
+
+  async function cancelarViaje(id) {
+    if (confirm("¿Estás seguro de cancelar este viaje?")) {
+      try {
+        await cancelarViajeBackend(id);
+        alert("Viaje cancelado correctamente");
+        location.reload();
+      } catch (error) {
+        alert("Error al cancelar el viaje: " + error.message);
       }
     }
-  </script>
+  }
+</script>
+
+
 </body>
 </html>
